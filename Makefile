@@ -9,7 +9,7 @@ MODULE=inventory-0.0.1-SNAPSHOT
 dock.build:
 	$(DOCKB) inventory
 
-dock.run:
+dock.run: dock.build
 	$(DOCKU) inventory
 
 app.build:

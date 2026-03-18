@@ -13,12 +13,10 @@ COPY .mvn .mvn
 # Dependency 
 COPY pom.xml .
 
-COPY settings.xml .
-
 RUN ./mvnw dependency:go-offline -U
 
 # Copy the full source code
-COPY src .
+COPY src src
 
 # Build the Spring Boot application
 RUN ./mvnw clean package -DskipTests
@@ -28,8 +26,6 @@ RUN ./mvnw clean package -DskipTests
 # ============
 FROM eclipse-temurin:21-jre-alpine AS runner
 
-ARG MY_MODULE
-
 # Add a non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
@@ -37,7 +33,7 @@ USER spring:spring
 WORKDIR /app
 
 # Copy the built jar from the builder stage
-COPY --from=builder /app/${MY_MODULE}_service/target/*.jar app.jar
+COPY --from=builder /app/target/*.jar app.jar
 
 # Run the application
 ENTRYPOINT ["java","-jar","/app/app.jar"]
