@@ -1,4 +1,4 @@
-package com.keyloop.inventory.entity;
+package com.keyloop.inventory.infrastructure.persistence.entity;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -14,12 +14,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
+@NoArgsConstructor
+@SuperBuilder
 public abstract class BaseEntity {
 
     @Id

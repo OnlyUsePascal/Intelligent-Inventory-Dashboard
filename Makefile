@@ -12,10 +12,10 @@ dock.build:
 dock.run: dock.build
 	$(DOCKU) inventory
 
-app.build:
-	$(MVNW) clean package
+app.test:
+	$(MVNW) test
 
-app.build.no_test:
+app.build:
 	$(MVNW) clean package -DskipTests
 	
 app.run: app.build
