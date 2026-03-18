@@ -1,0 +1,28 @@
+services:
+  inventory:
+    build:
+      context: .
+    depends_on:
+      - inventory-pg
+    ports:
+      - "8080:8080"
+    networks:
+      - keyloop_net
+    env_file: .env
+    environment:
+      - POSTGRES_URI=jdbc:postgresql://inventory-pg:5432/keyloop_db?user=keyloop_user&password=keyloop_pwd
+
+  inventory-pg:
+    image: "postgres:17"
+    ports:
+      - "5432:5432"
+    networks:
+      - keyloop_net
+    environment:
+      - POSTGRES_DB=keyloop_db
+      - POSTGRES_USER=keyloop_user
+      - POSTGRES_PASSWORD=keyloop_pwd
+
+networks:
+  keyloop_net:
+    driver: bridge
