@@ -5,10 +5,14 @@ import com.keyloop.inventory.application.dto.response.ReservationResponse;
 import com.keyloop.inventory.application.mapper.ReservationMapper;
 import com.keyloop.inventory.domain.exception.EntityNotFoundException;
 import com.keyloop.inventory.domain.exception.VehicleNotAvailableException;
+import com.keyloop.inventory.domain.model.EmployeeRole;
 import com.keyloop.inventory.domain.model.Reservation;
+import com.keyloop.inventory.domain.model.ReservationStatus;
 import com.keyloop.inventory.domain.model.Vehicle;
 import com.keyloop.inventory.domain.repository.ReservationRepository;
 import com.keyloop.inventory.domain.repository.VehicleRepository;
+import com.keyloop.inventory.infrastructure.security.TenantContext;
+import com.keyloop.inventory.infrastructure.security.exception.ForbiddenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,7 +67,7 @@ public class ReservationService {
         return reservationMapper.toResponse(saved);
     }
 
-    public void cancelReservation(UUID reservationId, UUID tenantId) {
+    public void cancelReservation(UUID reservationId, UUID tenantId, UUID employeeId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new EntityNotFoundException("Reservation", reservationId));
 
@@ -72,8 +76,22 @@ public class ReservationService {
             throw new EntityNotFoundException("Reservation", reservationId);
         }
 
-        // Delete reservation
-        reservationRepository.deleteById(reservationId);
+        // Check if reservation is already cancelled or expired
+        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
+            throw new IllegalStateException("Reservation is already " + reservation.getStatus().name().toLowerCase());
+        }
+
+        // Check permissions: only the creator or ADMIN can cancel
+        boolean isCreator = reservation.getEmployeeId().equals(employeeId);
+        boolean isAdmin = TenantContext.hasRole(EmployeeRole.ADMIN);
+        
+        if (!isCreator && !isAdmin) {
+            throw new ForbiddenException("Only the reservation creator or an ADMIN can cancel this reservation");
+        }
+
+        // Cancel reservation (soft delete - keep history)
+        reservation.cancel();
+        reservationRepository.save(reservation);
 
         // Check if there are any other active reservations, if not, make vehicle available
         if (!reservationRepository.hasActiveReservation(reservation.getVehicleId())) {

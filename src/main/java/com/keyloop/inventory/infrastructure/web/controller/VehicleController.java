@@ -243,8 +243,9 @@ public class VehicleController {
         // Only ADMIN and SALE can cancel reservations
         RoleGuard.requireAdminOrSale();
         UUID tenantId = TenantContext.getTenantId();
+        UUID employeeId = TenantContext.getEmployeeId();
 
-        reservationService.cancelReservation(reservationId, tenantId);
+        reservationService.cancelReservation(reservationId, tenantId, employeeId);
         return ResponseEntity.noContent().build();
     }
 
