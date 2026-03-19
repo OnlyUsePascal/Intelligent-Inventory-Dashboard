@@ -10,8 +10,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -26,10 +26,8 @@ import java.util.UUID;
 /**
  * Security filter that extracts tenant/employee context from HTTP headers.
  * 
- * Expected headers:
- * - X-Tenant-Id: UUID of the tenant (dealership)
- * - X-Employee-Id: UUID of the employee making the request
- * - X-Employee-Role: Role of the employee (ADMIN, INVENTORY, SALE)
+ * Expected header:
+ * - X-User-Context: tenantId|employeeId|role (role is ADMIN, INVENTORY, SALE)
  * 
  * This filter validates:
  * 1. All required headers are present
@@ -37,15 +35,13 @@ import java.util.UUID;
  * 3. Employee exists and belongs to the tenant
  * 4. Employee's role matches the provided role header
  */
-@Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RequiredArgsConstructor
 public class TenantContextFilter extends OncePerRequestFilter {
 
-    public static final String HEADER_TENANT_ID = "X-Tenant-Id";
-    public static final String HEADER_EMPLOYEE_ID = "X-Employee-Id";
-    public static final String HEADER_EMPLOYEE_ROLE = "X-Employee-Role";
+    public static final String HEADER_USER_CONTEXT = "X-User-Context";
+
+    private static final Logger log = LoggerFactory.getLogger(TenantContextFilter.class);
 
     private static final List<String> SKIP_PATHS = Arrays.asList(
             "/actuator/**",
@@ -61,6 +57,11 @@ public class TenantContextFilter extends OncePerRequestFilter {
     private final EmployeeRepository employeeRepository;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    public TenantContextFilter(TenantRepository tenantRepository, EmployeeRepository employeeRepository) {
+        this.tenantRepository = tenantRepository;
+        this.employeeRepository = employeeRepository;
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
@@ -72,9 +73,10 @@ public class TenantContextFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             // Extract and validate headers
-            UUID tenantId = extractTenantId(request);
-            UUID employeeId = extractEmployeeId(request);
-            EmployeeRole role = extractRole(request);
+            UserContext userContext = extractUserContext(request);
+            UUID tenantId = userContext.tenantId();
+            UUID employeeId = userContext.employeeId();
+            EmployeeRole role = userContext.role();
 
             // Validate tenant exists
             if (!tenantRepository.existsById(tenantId)) {
@@ -107,42 +109,55 @@ public class TenantContextFilter extends OncePerRequestFilter {
         }
     }
 
-    private UUID extractTenantId(HttpServletRequest request) {
-        String tenantIdStr = request.getHeader(HEADER_TENANT_ID);
-        if (tenantIdStr == null || tenantIdStr.isBlank()) {
-            throw new MissingHeaderException(HEADER_TENANT_ID);
+    private UserContext extractUserContext(HttpServletRequest request) {
+        String userContextHeader = request.getHeader(HEADER_USER_CONTEXT);
+        if (userContextHeader == null || userContextHeader.isBlank()) {
+            throw new MissingHeaderException(HEADER_USER_CONTEXT);
         }
+
+        String[] parts = userContextHeader.split("\\|", -1);
+        if (parts.length != 3) {
+            log.warn("Invalid user context format: {}", userContextHeader);
+            throw new MissingHeaderException(HEADER_USER_CONTEXT,
+                    "Invalid user context header format. Expected 'tenantId|employeeId|role'.");
+        }
+
+        String tenantIdStr = parts[0].trim();
+        String employeeIdStr = parts[1].trim();
+        String roleStr = parts[2].trim();
+        if (tenantIdStr.isBlank() || employeeIdStr.isBlank() || roleStr.isBlank()) {
+            log.warn("Invalid user context value: {}", userContextHeader);
+            throw new MissingHeaderException(HEADER_USER_CONTEXT,
+                    "Invalid user context header value. Expected non-empty tenantId, employeeId, and role.");
+        }
+
+        UUID tenantId = parseUuid(tenantIdStr, "tenant ID");
+        UUID employeeId = parseUuid(employeeIdStr, "employee ID");
+        EmployeeRole role = parseRole(roleStr);
+
+        return new UserContext(tenantId, employeeId, role);
+    }
+
+    private UUID parseUuid(String value, String label) {
         try {
-            return UUID.fromString(tenantIdStr);
+            return UUID.fromString(value);
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid tenant ID format: {}", tenantIdStr);
-            throw new MissingHeaderException(HEADER_TENANT_ID);
+            log.warn("Invalid {} format: {}", label, value);
+            throw new MissingHeaderException(HEADER_USER_CONTEXT,
+                    "Invalid user context header value. Expected UUIDs for tenantId and employeeId.");
         }
     }
 
-    private UUID extractEmployeeId(HttpServletRequest request) {
-        String employeeIdStr = request.getHeader(HEADER_EMPLOYEE_ID);
-        if (employeeIdStr == null || employeeIdStr.isBlank()) {
-            throw new MissingHeaderException(HEADER_EMPLOYEE_ID);
-        }
+    private EmployeeRole parseRole(String value) {
         try {
-            return UUID.fromString(employeeIdStr);
+            return EmployeeRole.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid employee ID format: {}", employeeIdStr);
-            throw new MissingHeaderException(HEADER_EMPLOYEE_ID);
+            log.warn("Invalid role: {}", value);
+            throw new MissingHeaderException(HEADER_USER_CONTEXT,
+                    "Invalid user context header value. Expected role ADMIN, INVENTORY, or SALE.");
         }
     }
 
-    private EmployeeRole extractRole(HttpServletRequest request) {
-        String roleStr = request.getHeader(HEADER_EMPLOYEE_ROLE);
-        if (roleStr == null || roleStr.isBlank()) {
-            throw new MissingHeaderException(HEADER_EMPLOYEE_ROLE);
-        }
-        try {
-            return EmployeeRole.valueOf(roleStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid role: {}", roleStr);
-            throw new MissingHeaderException(HEADER_EMPLOYEE_ROLE);
-        }
+    private record UserContext(UUID tenantId, UUID employeeId, EmployeeRole role) {
     }
 }

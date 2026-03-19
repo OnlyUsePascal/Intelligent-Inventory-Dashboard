@@ -13,6 +13,11 @@ public class MissingHeaderException extends RuntimeException {
         this.headerName = headerName;
     }
 
+    public MissingHeaderException(String headerName, String message) {
+        super(message);
+        this.headerName = headerName;
+    }
+
     public String getHeaderName() {
         return headerName;
     }
