@@ -39,7 +39,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/inventory-vehicles")
-@Tag(name = "Vehicles", description = "Vehicle inventory management API")
 public class VehicleController {
 
     private final VehicleService vehicleService;
@@ -57,7 +56,7 @@ public class VehicleController {
     // ==================== Vehicle Endpoints ====================
 
     @GetMapping
-    @Operation(summary = "List vehicles", description = "Get paginated list of vehicles with optional filters")
+    @Operation(summary = "List vehicles", description = "Get paginated list of vehicles with optional filters", tags = {"Vehicles"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved vehicles"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request parameters",
@@ -92,7 +91,7 @@ public class VehicleController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get vehicle by ID", description = "Retrieve a single vehicle by its ID")
+    @Operation(summary = "Get vehicle by ID", description = "Retrieve a single vehicle by its ID", tags = {"Vehicles"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved vehicle"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid vehicle ID",
@@ -112,7 +111,7 @@ public class VehicleController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search vehicle", description = "Search for a vehicle by VIN or license plate")
+    @Operation(summary = "Search vehicle", description = "Search for a vehicle by VIN or license plate", tags = {"Vehicles"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully found vehicle"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Must provide either vin or licensePlate",
@@ -144,7 +143,7 @@ public class VehicleController {
     }
 
     @PostMapping
-    @Operation(summary = "Create vehicle", description = "Create a new vehicle in the inventory")
+    @Operation(summary = "Create vehicle", description = "Create a new vehicle in the inventory", tags = {"Vehicles"})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Vehicle payload",
             required = true,
@@ -184,7 +183,7 @@ public class VehicleController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update vehicle", description = "Update an existing vehicle")
+    @Operation(summary = "Update vehicle", description = "Update an existing vehicle", tags = {"Vehicles"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vehicle updated successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data",
@@ -208,7 +207,7 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete vehicle", description = "Delete a vehicle from the inventory")
+    @Operation(summary = "Delete vehicle", description = "Delete a vehicle from the inventory", tags = {"Vehicles"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Vehicle deleted successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions",
@@ -231,7 +230,7 @@ public class VehicleController {
     // ==================== Reservation Endpoints ====================
 
     @GetMapping("/{vehicleId}/reservations")
-    @Operation(summary = "Get vehicle reservations", description = "Get all reservations for a specific vehicle")
+    @Operation(summary = "Get vehicle reservations", description = "Get all reservations for a specific vehicle", tags = {"Reservations"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved reservations"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found",
@@ -249,7 +248,7 @@ public class VehicleController {
     }
 
     @PostMapping("/{vehicleId}/reservations")
-    @Operation(summary = "Create reservation", description = "Reserve a vehicle")
+    @Operation(summary = "Create reservation", description = "Reserve a vehicle", tags = {"Reservations"})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Reservation payload",
             required = true,
@@ -296,7 +295,7 @@ public class VehicleController {
     }
 
     @DeleteMapping("/reservations/{reservationId}")
-    @Operation(summary = "Cancel reservation", description = "Cancel an existing reservation")
+    @Operation(summary = "Cancel reservation", description = "Cancel an existing reservation", tags = {"Reservations"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Reservation cancelled successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions",
@@ -320,7 +319,7 @@ public class VehicleController {
     // ==================== Action Endpoints ====================
 
     @GetMapping("/{vehicleId}/actions")
-    @Operation(summary = "Get vehicle actions", description = "Get action history for a specific vehicle (chronological order)")
+    @Operation(summary = "Get vehicle actions", description = "Get action history for a specific vehicle (chronological order)", tags = {"Actions"})
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved actions"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found",
@@ -338,7 +337,7 @@ public class VehicleController {
     }
 
     @PostMapping("/{vehicleId}/actions")
-    @Operation(summary = "Log vehicle action", description = "Log an action/remark against a vehicle")
+    @Operation(summary = "Log vehicle action", description = "Log an action/remark against a vehicle", tags = {"Actions"})
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Action payload",
             required = true,

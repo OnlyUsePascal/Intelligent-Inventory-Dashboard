@@ -12,6 +12,7 @@ Add Java-based data seeding (no Flyway) and finalize Swagger/OpenAPI docs.
 - Seeder wipes all data before seeding
 - Seed **20 vehicles** with mixed distribution
 - Include some aging stock, reservations, and actions
+- Write seed output to `seed-output.txt` with tenant, employee info, and ready-to-use `X-User-Context` headers
 
 ### Tasks
 - [ ] Add seeder component that runs on startup when `SEED_DATA=true`

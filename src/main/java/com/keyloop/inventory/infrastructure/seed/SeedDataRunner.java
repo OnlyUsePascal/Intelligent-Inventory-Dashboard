@@ -27,6 +27,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -126,11 +131,14 @@ public class SeedDataRunner implements ApplicationRunner {
                 .name("Jordan Patel")
                 .role(EmployeeRole.SALE)
                 .build());
-        employeeRepository.save(Employee.builder()
+        Employee secondaryAdmin = employeeRepository.save(Employee.builder()
                 .tenantId(tenantSecondary.getId())
                 .name("Morgan Lee")
                 .role(EmployeeRole.ADMIN)
                 .build());
+
+        writeSeedOutput(List.of(tenantPrimary, tenantSecondary),
+                List.of(admin, inventory, sales, secondaryAdmin));
 
         List<Vehicle> vehicles = buildVehicles(tenantPrimary.getId());
         List<Vehicle> savedVehicles = new ArrayList<>();
@@ -149,6 +157,37 @@ public class SeedDataRunner implements ApplicationRunner {
         }
 
         return new SeedSummary(2, 4, savedVehicles.size(), reservations.size(), actions.size());
+    }
+
+    private void writeSeedOutput(List<Tenant> tenants, List<Employee> employees) {
+        Path outputPath = Path.of("seed-output.txt");
+        try (BufferedWriter writer = Files.newBufferedWriter(outputPath,
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+            writer.write("TENANTS");
+            writer.newLine();
+            for (Tenant tenant : tenants) {
+                writer.write(String.format("tenant.id=%s tenant.name=%s", tenant.getId(), tenant.getName()));
+                writer.newLine();
+            }
+            writer.newLine();
+            writer.write("EMPLOYEES");
+            writer.newLine();
+            for (Employee employee : employees) {
+                writer.write(String.format("employee.id=%s employee.tenantId=%s employee.name=%s employee.role=%s",
+                        employee.getId(), employee.getTenantId(), employee.getName(), employee.getRole()));
+                writer.newLine();
+            }
+            writer.newLine();
+            writer.write("READY_TO_USE_HEADERS");
+            writer.newLine();
+            for (Employee employee : employees) {
+                writer.write(String.format("X-User-Context: %s|%s|%s",
+                        employee.getTenantId(), employee.getId(), employee.getRole()));
+                writer.newLine();
+            }
+        } catch (IOException ex) {
+            logger.warn("Failed to write seed output file at {}", outputPath.toAbsolutePath(), ex);
+        }
     }
 
     private List<Vehicle> buildVehicles(UUID tenantId) {
