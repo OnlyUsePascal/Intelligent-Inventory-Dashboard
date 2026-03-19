@@ -14,6 +14,7 @@ public class Reservation {
     private UUID employeeId;
     private Instant reservationDate;
     private Instant reservedUntilDate;
+    private ReservationStatus status;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -22,12 +23,14 @@ public class Reservation {
 
     public Reservation(UUID id, UUID vehicleId, UUID employeeId,
                        Instant reservationDate, Instant reservedUntilDate,
+                       ReservationStatus status,
                        Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.vehicleId = vehicleId;
         this.employeeId = employeeId;
         this.reservationDate = reservationDate;
         this.reservedUntilDate = reservedUntilDate;
+        this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -38,16 +41,33 @@ public class Reservation {
 
     /**
      * Business method: Check if reservation is still active.
+     * Active means status is ACTIVE and hasn't passed reservedUntilDate.
      */
     public boolean isActive() {
-        return reservedUntilDate != null && reservedUntilDate.isAfter(Instant.now());
+        return status == ReservationStatus.ACTIVE 
+                && reservedUntilDate != null 
+                && reservedUntilDate.isAfter(Instant.now());
     }
 
     /**
-     * Business method: Check if reservation has expired.
+     * Business method: Check if reservation has expired (based on time).
      */
     public boolean isExpired() {
         return reservedUntilDate != null && reservedUntilDate.isBefore(Instant.now());
+    }
+
+    /**
+     * Cancel this reservation.
+     */
+    public void cancel() {
+        this.status = ReservationStatus.CANCELLED;
+    }
+
+    /**
+     * Mark this reservation as expired.
+     */
+    public void expire() {
+        this.status = ReservationStatus.EXPIRED;
     }
 
     // Getters and Setters
@@ -91,6 +111,14 @@ public class Reservation {
         this.reservedUntilDate = reservedUntilDate;
     }
 
+    public ReservationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -113,6 +141,7 @@ public class Reservation {
         private UUID employeeId;
         private Instant reservationDate;
         private Instant reservedUntilDate;
+        private ReservationStatus status = ReservationStatus.ACTIVE;
         private Instant createdAt;
         private Instant updatedAt;
 
@@ -141,6 +170,11 @@ public class Reservation {
             return this;
         }
 
+        public Builder status(ReservationStatus status) {
+            this.status = status;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -153,7 +187,7 @@ public class Reservation {
 
         public Reservation build() {
             return new Reservation(id, vehicleId, employeeId, reservationDate,
-                    reservedUntilDate, createdAt, updatedAt);
+                    reservedUntilDate, status, createdAt, updatedAt);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.keyloop.inventory.infrastructure.persistence.entity;
 
+import com.keyloop.inventory.domain.model.ReservationStatus;
 import com.keyloop.inventory.infrastructure.persistence.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,10 @@ public class ReservationJpaEntity extends BaseEntity {
 
     @Column(name = "reserved_until_date", nullable = false)
     private Instant reservedUntilDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ReservationStatus status = ReservationStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", insertable = false, updatable = false)

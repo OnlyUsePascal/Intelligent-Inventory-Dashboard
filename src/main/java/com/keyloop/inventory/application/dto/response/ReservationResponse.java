@@ -1,5 +1,6 @@
 package com.keyloop.inventory.application.dto.response;
 
+import com.keyloop.inventory.domain.model.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class ReservationResponse {
     private UUID employeeId;
     private Instant reservationDate;
     private Instant reservedUntilDate;
+    private ReservationStatus status;
     private boolean active;
     private Instant createdAt;
     private Instant updatedAt;

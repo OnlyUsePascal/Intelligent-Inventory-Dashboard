@@ -3,6 +3,7 @@ package com.keyloop.inventory.application.mapper;
 import com.keyloop.inventory.application.dto.request.CreateReservationRequest;
 import com.keyloop.inventory.application.dto.response.ReservationResponse;
 import com.keyloop.inventory.domain.model.Reservation;
+import com.keyloop.inventory.domain.model.ReservationStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -28,6 +29,7 @@ public class ReservationMapper {
                 .employeeId(reservation.getEmployeeId())
                 .reservationDate(reservation.getReservationDate())
                 .reservedUntilDate(reservation.getReservedUntilDate())
+                .status(reservation.getStatus())
                 .active(reservation.isActive())
                 .createdAt(reservation.getCreatedAt())
                 .updatedAt(reservation.getUpdatedAt())
@@ -47,6 +49,7 @@ public class ReservationMapper {
                 .employeeId(employeeId)
                 .reservationDate(Instant.now())
                 .reservedUntilDate(request.getReservedUntilDate())
+                .status(ReservationStatus.ACTIVE)
                 .build();
     }
 }

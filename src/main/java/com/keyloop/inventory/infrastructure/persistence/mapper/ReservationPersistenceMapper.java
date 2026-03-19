@@ -1,6 +1,7 @@
 package com.keyloop.inventory.infrastructure.persistence.mapper;
 
 import com.keyloop.inventory.domain.model.Reservation;
+import com.keyloop.inventory.domain.model.ReservationStatus;
 import com.keyloop.inventory.infrastructure.persistence.entity.ReservationJpaEntity;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ public class ReservationPersistenceMapper {
                 .employeeId(entity.getEmployeeId())
                 .reservationDate(entity.getReservationDate())
                 .reservedUntilDate(entity.getReservedUntilDate())
+                .status(entity.getStatus() != null ? entity.getStatus() : ReservationStatus.ACTIVE)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -35,6 +37,7 @@ public class ReservationPersistenceMapper {
         entity.setEmployeeId(domain.getEmployeeId());
         entity.setReservationDate(domain.getReservationDate());
         entity.setReservedUntilDate(domain.getReservedUntilDate());
+        entity.setStatus(domain.getStatus() != null ? domain.getStatus() : ReservationStatus.ACTIVE);
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         return entity;
