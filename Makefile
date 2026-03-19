@@ -6,11 +6,11 @@ MVNW=./mvnw
 BUILD_DIR=./target
 MODULE=inventory-0.0.1-SNAPSHOT
 
-dock.build:
-	$(DOCKB) inventory
+# dock.build:
+# 	$(DOCKB) inventory
 
-dock.run:
-	$(DOCKU) inventory
+# dock.run:
+# 	$(DOCKU) inventory
 
 app.test:
 	$(MVNW) test
