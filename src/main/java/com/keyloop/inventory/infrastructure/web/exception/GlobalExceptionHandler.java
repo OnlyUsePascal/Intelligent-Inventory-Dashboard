@@ -3,6 +3,9 @@ package com.keyloop.inventory.infrastructure.web.exception;
 import com.keyloop.inventory.domain.exception.DomainException;
 import com.keyloop.inventory.domain.exception.EntityNotFoundException;
 import com.keyloop.inventory.domain.exception.VehicleNotAvailableException;
+import com.keyloop.inventory.infrastructure.security.exception.ForbiddenException;
+import com.keyloop.inventory.infrastructure.security.exception.MissingHeaderException;
+import com.keyloop.inventory.infrastructure.security.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -90,7 +93,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle missing required headers.
+     * Handle missing required headers (Spring MVC).
      */
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ProblemDetail handleMissingHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
@@ -103,6 +106,58 @@ public class GlobalExceptionHandler {
         problem.setInstance(URI.create(request.getRequestURI()));
         problem.setProperty("timestamp", Instant.now());
         problem.setProperty("header", ex.getHeaderName());
+        
+        return problem;
+    }
+
+    /**
+     * Handle missing security headers (from TenantContextFilter).
+     */
+    @ExceptionHandler(MissingHeaderException.class)
+    public ProblemDetail handleMissingSecurityHeader(MissingHeaderException ex, HttpServletRequest request) {
+        log.warn("Missing required security header: {}", ex.getHeaderName());
+        
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setType(URI.create(ERROR_BASE_URI + "missing-header"));
+        problem.setTitle("Bad Request");
+        problem.setInstance(URI.create(request.getRequestURI()));
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("header", ex.getHeaderName());
+        
+        return problem;
+    }
+
+    /**
+     * Handle unauthorized exceptions (invalid tenant/employee).
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    public ProblemDetail handleUnauthorized(UnauthorizedException ex, HttpServletRequest request) {
+        log.warn("Unauthorized: {}", ex.getMessage());
+        
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setType(URI.create(ERROR_BASE_URI + "unauthorized"));
+        problem.setTitle("Unauthorized");
+        problem.setInstance(URI.create(request.getRequestURI()));
+        problem.setProperty("timestamp", Instant.now());
+        
+        return problem;
+    }
+
+    /**
+     * Handle forbidden exceptions (insufficient permissions).
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ProblemDetail handleForbidden(ForbiddenException ex, HttpServletRequest request) {
+        log.warn("Forbidden: {}", ex.getMessage());
+        
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setType(URI.create(ERROR_BASE_URI + "forbidden"));
+        problem.setTitle("Forbidden");
+        problem.setInstance(URI.create(request.getRequestURI()));
+        problem.setProperty("timestamp", Instant.now());
+        if (ex.getRequiredRoles() != null) {
+            problem.setProperty("requiredRoles", ex.getRequiredRoles());
+        }
         
         return problem;
     }

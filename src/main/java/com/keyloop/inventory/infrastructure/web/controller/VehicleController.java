@@ -13,6 +13,8 @@ import com.keyloop.inventory.application.usecase.VehicleService;
 import com.keyloop.inventory.domain.model.InventoryType;
 import com.keyloop.inventory.domain.model.VehicleStatus;
 import com.keyloop.inventory.domain.repository.VehicleRepository;
+import com.keyloop.inventory.infrastructure.security.RoleGuard;
+import com.keyloop.inventory.infrastructure.security.TenantContext;
 import com.keyloop.inventory.infrastructure.web.dto.ApiResponse;
 import com.keyloop.inventory.infrastructure.web.dto.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,8 +55,6 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request parameters")
     })
     public ResponseEntity<PagedResponse<VehicleResponse>> listVehicles(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Filter by make")
             @RequestParam(required = false) String make,
             @Parameter(description = "Filter by model")
@@ -67,6 +67,9 @@ public class VehicleController {
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size (default 20, max 100)")
             @RequestParam(defaultValue = "20") int size) {
+
+        // All authenticated roles can list vehicles
+        UUID tenantId = TenantContext.getTenantId();
 
         // Enforce max page size
         if (size > 100) {
@@ -86,10 +89,11 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<VehicleResponse>> getVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID id) {
+
+        // All authenticated roles can view a vehicle
+        UUID tenantId = TenantContext.getTenantId();
 
         VehicleResponse vehicle = vehicleService.getVehicle(id, tenantId);
         return ResponseEntity.ok(ApiResponse.of(vehicle));
@@ -103,12 +107,13 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<VehicleResponse>> searchVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle Identification Number")
             @RequestParam(required = false) String vin,
             @Parameter(description = "License plate number")
             @RequestParam(required = false) String licensePlate) {
+
+        // All authenticated roles can search vehicles
+        UUID tenantId = TenantContext.getTenantId();
 
         if (vin == null && licensePlate == null) {
             throw new IllegalArgumentException("Must provide either 'vin' or 'licensePlate' parameter");
@@ -128,12 +133,15 @@ public class VehicleController {
     @Operation(summary = "Create vehicle", description = "Create a new vehicle in the inventory")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Vehicle created successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions")
     })
     public ResponseEntity<ApiResponse<VehicleResponse>> createVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Valid @RequestBody CreateVehicleRequest request) {
+
+        // Only ADMIN and INVENTORY can create vehicles
+        RoleGuard.requireAdminOrInventory();
+        UUID tenantId = TenantContext.getTenantId();
 
         VehicleResponse vehicle = vehicleService.createVehicle(request, tenantId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(vehicle));
@@ -144,14 +152,17 @@ public class VehicleController {
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vehicle updated successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<VehicleResponse>> updateVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID id,
             @Valid @RequestBody UpdateVehicleRequest request) {
+
+        // Only ADMIN and INVENTORY can update vehicles
+        RoleGuard.requireAdminOrInventory();
+        UUID tenantId = TenantContext.getTenantId();
 
         VehicleResponse vehicle = vehicleService.updateVehicle(id, request, tenantId);
         return ResponseEntity.ok(ApiResponse.of(vehicle));
@@ -161,13 +172,16 @@ public class VehicleController {
     @Operation(summary = "Delete vehicle", description = "Delete a vehicle from the inventory")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Vehicle deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<Void> deleteVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID id) {
+
+        // Only ADMIN can delete vehicles
+        RoleGuard.requireAdmin();
+        UUID tenantId = TenantContext.getTenantId();
 
         vehicleService.deleteVehicle(id, tenantId);
         return ResponseEntity.noContent().build();
@@ -182,10 +196,11 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<List<ReservationResponse>>> getReservationsForVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID vehicleId) {
+
+        // All authenticated roles can view reservations
+        UUID tenantId = TenantContext.getTenantId();
 
         List<ReservationResponse> reservations = reservationService.getReservationsForVehicle(vehicleId, tenantId);
         return ResponseEntity.ok(ApiResponse.of(reservations));
@@ -196,17 +211,19 @@ public class VehicleController {
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Reservation created successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Vehicle not available for reservation")
     })
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
-            @Parameter(description = "Employee ID", required = true)
-            @RequestHeader("X-Employee-Id") UUID employeeId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID vehicleId,
             @Valid @RequestBody CreateReservationRequest request) {
+
+        // Only ADMIN and SALE can create reservations
+        RoleGuard.requireAdminOrSale();
+        UUID tenantId = TenantContext.getTenantId();
+        UUID employeeId = TenantContext.getEmployeeId();
 
         ReservationResponse reservation = reservationService.createReservation(vehicleId, request, tenantId, employeeId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(reservation));
@@ -216,13 +233,16 @@ public class VehicleController {
     @Operation(summary = "Cancel reservation", description = "Cancel an existing reservation")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Reservation cancelled successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Reservation not found")
     })
     public ResponseEntity<Void> cancelReservation(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Reservation ID", required = true)
             @PathVariable UUID reservationId) {
+
+        // Only ADMIN and SALE can cancel reservations
+        RoleGuard.requireAdminOrSale();
+        UUID tenantId = TenantContext.getTenantId();
 
         reservationService.cancelReservation(reservationId, tenantId);
         return ResponseEntity.noContent().build();
@@ -237,10 +257,11 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<List<VehicleActionResponse>>> getActionsForVehicle(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID vehicleId) {
+
+        // All authenticated roles can view actions
+        UUID tenantId = TenantContext.getTenantId();
 
         List<VehicleActionResponse> actions = vehicleActionService.getActionsForVehicle(vehicleId, tenantId);
         return ResponseEntity.ok(ApiResponse.of(actions));
@@ -254,13 +275,13 @@ public class VehicleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Vehicle not found")
     })
     public ResponseEntity<ApiResponse<VehicleActionResponse>> createAction(
-            @Parameter(description = "Tenant ID", required = true)
-            @RequestHeader("X-Tenant-Id") UUID tenantId,
-            @Parameter(description = "Employee ID", required = true)
-            @RequestHeader("X-Employee-Id") UUID employeeId,
             @Parameter(description = "Vehicle ID", required = true)
             @PathVariable UUID vehicleId,
             @Valid @RequestBody CreateVehicleActionRequest request) {
+
+        // All authenticated roles can log actions
+        UUID tenantId = TenantContext.getTenantId();
+        UUID employeeId = TenantContext.getEmployeeId();
 
         VehicleActionResponse action = vehicleActionService.createAction(vehicleId, request, tenantId, employeeId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(action));
