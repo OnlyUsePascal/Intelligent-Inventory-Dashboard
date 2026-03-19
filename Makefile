@@ -1,7 +1,7 @@
 include .env
 
 DOCKB=docker compose build
-DOCKU=docker compose up --build --detach 
+DOCKU=docker compose up --build
 MVNW=./mvnw
 BUILD_DIR=./target
 MODULE=inventory-0.0.1-SNAPSHOT
@@ -9,7 +9,7 @@ MODULE=inventory-0.0.1-SNAPSHOT
 dock.build:
 	$(DOCKB) inventory
 
-dock.run: dock.build
+dock.run:
 	$(DOCKU) inventory
 
 app.test:
