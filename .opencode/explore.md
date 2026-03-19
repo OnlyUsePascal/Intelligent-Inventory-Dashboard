@@ -167,16 +167,23 @@ Also missing `src` directory structure in COPY command (line 21 copies `src` but
 - [ ] Reservation management
 - [ ] Vehicle actions/insights logging
 
-### Phase 5: Observability & Testing
-- [ ] Actuator + Prometheus metrics
-- [ ] Grafana dashboard in compose
-- [ ] Unit tests for aging stock
-- [ ] Integration tests with Testcontainers
+### Phase 5: Testing
+- [ ] Unit tests (CRUD for all domains, aging stock flags, reservation conflict rules)
 
-### Phase 6: Seeding & Polish
-- [ ] Flyway migration for 50+ seed vehicles
-- [ ] Final Swagger documentation
-- [ ] README updates
+### Phase 6: Seeding & Swagger
+- [ ] Java seeder (not Flyway), wipes data before seeding
+- [ ] Seeder triggered by `SEED_DATA=true` in .env (commented out = no seed)
+- [ ] Seed 20 vehicles with mixed distribution
+- [ ] Finalize Swagger/OpenAPI documentation
+
+### Phase 7: Observability
+- [ ] Actuator + Prometheus metrics
+- [ ] Prometheus + Grafana in docker compose
+- [ ] Basic dashboards for latency, error rate, RPS
+
+### Phase 8: Documentation
+- [ ] README update (setup, build, run, test, links)
+- [ ] Design document (project overview, functionalities, architecture, AI use, references)
 
 ---
 
