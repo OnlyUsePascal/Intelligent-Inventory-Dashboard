@@ -1,18 +1,11 @@
 include .env
 
-DOCKB=docker compose build
-DOCKU=docker compose up --build
+DOCK=docker compose up --build --detach
 MVNW=./mvnw
 BUILD_DIR=./target
 MODULE=inventory-0.0.1-SNAPSHOT
 
-# dock.build:
-# 	$(DOCKB) inventory
-
-# dock.run:
-# 	$(DOCKU) inventory
-
-app.test:
+test:
 	$(MVNW) test
 
 app.build:
@@ -20,3 +13,9 @@ app.build:
 	
 app.run: app.build
 	java -jar $(BUILD_DIR)/$(MODULE).jar
+
+app.dock: 
+	$(DOCK) inventory
+
+infra:
+	$(DOCK) inventory-pg prometheus grafana 
