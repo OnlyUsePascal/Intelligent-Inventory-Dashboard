@@ -11,6 +11,8 @@ services:
     env_file: .env
     environment:
       - POSTGRES_URI=jdbc:postgresql://inventory-pg:5432/keyloop_db?user=keyloop_user&password=keyloop_pwd
+    volumes:
+      - ./seed-output.txt:/app/seed-output.txt
 
   prometheus:
     image: prom/prometheus:latest
